@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="markoraGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="55%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#0b0f19" />
+  <path
+    d="M16 46V18h8.8l7.2 12.4L39.2 18H48v28h-7V29.8l-6.3 10.7h-5.5L22.9 29.8V46H16Z"
+    fill="url(#markoraGradient)"
+  />
+</svg>
