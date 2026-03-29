@@ -13,15 +13,15 @@ export const offices = [
 ];
 
 export const stats = [
-  { value: '50+', label: 'Projects Delivered' },
-  { value: '3', label: 'Regional Offices' },
-  { value: '98%', label: 'Retention Rate' },
+  { value: '4', label: 'Core Services' },
+  { value: 'MENA', label: 'Regional Focus' },
+  { value: '1', label: 'Integrated Team' },
 ];
 
 export const journey = [
   { year: '2025', text: 'Founded in Dubai' },
-  { year: '2025', text: 'Expanded to Cairo and Amman' },
-  { year: '2026', text: 'Full integrated growth model' },
+  { year: '2025', text: 'Built a regional collaboration model across Dubai, Cairo, and Amman' },
+  { year: '2026', text: 'Refined a full-service growth offering for premium MENA brands' },
 ];
 
 export const services = [
@@ -116,7 +116,7 @@ export const projects = [
     color: '#c9a96e',
     description: 'Complete brand transformation and social media strategy for a premium bakery in Dubai.',
     tags: ['Brand Identity', 'Social Media', 'Photography'],
-    results: ['200% increase in social engagement', 'New visual identity system', 'Content calendar framework'],
+    results: ['Sharper social engagement', 'New visual identity system', 'Content calendar framework'],
   },
   {
     id: 2,
@@ -127,7 +127,7 @@ export const projects = [
     color: '#22d3ee',
     description: 'Cinematic content and a growth-minded campaign system for a Dubai cafe experience.',
     tags: ['Video Production', 'Digital Marketing', 'Campaign Strategy'],
-    results: ['3x engagement rate', 'Video-first content cadence', 'Increased foot traffic'],
+    results: ['Stronger engagement momentum', 'Video-first content cadence', 'Increased venue awareness'],
   },
   {
     id: 3,
@@ -138,7 +138,7 @@ export const projects = [
     color: '#a855f7',
     description: 'A full-funnel performance strategy with measurable channel growth and sharper acquisition.',
     tags: ['Growth Marketing', 'Paid Advertising', 'Analytics'],
-    results: ['3x engagement growth', 'Optimized ad spend', 'New customer acquisition funnel'],
+    results: ['Stronger acquisition structure', 'Optimized ad spend', 'New customer acquisition funnel'],
   },
   {
     id: 4,

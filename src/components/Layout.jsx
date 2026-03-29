@@ -1,6 +1,52 @@
 import React, { useState } from 'react';
 import { contactChannels, navItems, socialLinks } from '../data';
 
+const PAGE_PATHS = {
+  home: '/',
+  services: '/services',
+  work: '/work',
+  about: '/about',
+  contact: '/contact',
+  privacy: '/privacy',
+  terms: '/terms',
+};
+
+function pageHref(pageKey) {
+  return PAGE_PATHS[pageKey] ?? '/';
+}
+
+function shouldHandleClientNavigation(event) {
+  return !(
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  );
+}
+
+function PageLink({ pageKey, className, currentPage, onNavigate, children, ...props }) {
+  const isActive = currentPage === pageKey;
+  const mergedClassName = `${className}${isActive ? ' active' : ''}`;
+
+  return (
+    <a
+      {...props}
+      href={pageHref(pageKey)}
+      className={mergedClassName}
+      aria-current={isActive ? 'page' : undefined}
+      onClick={(event) => {
+        if (!shouldHandleClientNavigation(event)) return;
+        event.preventDefault();
+        onNavigate(pageKey);
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
 export function Header({ currentPage, onNavigate }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -12,32 +58,43 @@ export function Header({ currentPage, onNavigate }) {
   return (
     <header className="site-header">
       <div className="shell nav-shell">
-        <button className="brand" onClick={() => handleNavigate('home')}>
+        <a
+          className="brand"
+          href="/"
+          onClick={(event) => {
+            if (!shouldHandleClientNavigation(event)) return;
+            event.preventDefault();
+            handleNavigate('home');
+          }}
+        >
           <span>Mark</span>
           <span className="brand-gradient">Ora</span>
-        </button>
+        </a>
 
         <nav className="desktop-nav" aria-label="Primary">
           {navItems.map((item) => (
-            <button
+            <PageLink
               key={item.key}
-              className={currentPage === item.key ? 'nav-link active' : 'nav-link'}
-              onClick={() => handleNavigate(item.key)}
+              pageKey={item.key}
+              className="nav-link"
+              currentPage={currentPage}
+              onNavigate={handleNavigate}
             >
               {item.label}
-            </button>
+            </PageLink>
           ))}
         </nav>
 
-        <button className="cta-pill" onClick={() => handleNavigate('contact')}>
+        <PageLink pageKey="contact" className="cta-pill" currentPage={currentPage} onNavigate={handleNavigate}>
           Start a Project
-        </button>
+        </PageLink>
 
         <button
           className={menuOpen ? 'mobile-menu-toggle active' : 'mobile-menu-toggle'}
           onClick={() => setMenuOpen((open) => !open)}
           aria-label="Toggle navigation menu"
           aria-expanded={menuOpen}
+          aria-controls="mobile-nav-panel"
         >
           <span />
           <span />
@@ -45,40 +102,55 @@ export function Header({ currentPage, onNavigate }) {
         </button>
       </div>
 
-      <div className={menuOpen ? 'mobile-menu-panel open' : 'mobile-menu-panel'}>
+      <div id="mobile-nav-panel" className={menuOpen ? 'mobile-menu-panel open' : 'mobile-menu-panel'}>
         <div className="shell mobile-menu-shell">
           <p className="mini-label accent">Navigate</p>
           <div className="mobile-menu-links">
             {navItems.map((item) => (
-              <button
+              <PageLink
                 key={item.key}
-                className={currentPage === item.key ? 'mobile-nav-link active' : 'mobile-nav-link'}
-                onClick={() => handleNavigate(item.key)}
+                pageKey={item.key}
+                className="mobile-nav-link"
+                currentPage={currentPage}
+                onNavigate={handleNavigate}
               >
                 <span>{item.label}</span>
-                <span className="mobile-nav-arrow">/</span>
-              </button>
+                <span className="mobile-nav-arrow" aria-hidden="true">/</span>
+              </PageLink>
             ))}
           </div>
-          <button className="cta-pill mobile-menu-cta" onClick={() => handleNavigate('contact')}>
+          <PageLink
+            pageKey="contact"
+            className="cta-pill mobile-menu-cta"
+            currentPage={currentPage}
+            onNavigate={handleNavigate}
+          >
             Start a Project
-          </button>
+          </PageLink>
         </div>
       </div>
     </header>
   );
 }
 
-export function Footer({ onNavigate }) {
+export function Footer({ currentPage, onNavigate }) {
   return (
     <footer className="site-footer">
       <div className="shell footer-grid">
         <div className="footer-brand-column">
           <p className="footer-kicker">MarkOra Growth Studio</p>
-          <button className="brand footer-brand" onClick={() => onNavigate('home')}>
+          <a
+            className="brand footer-brand"
+            href="/"
+            onClick={(event) => {
+              if (!shouldHandleClientNavigation(event)) return;
+              event.preventDefault();
+              onNavigate('home');
+            }}
+          >
             <span>Mark</span>
             <span className="brand-gradient">Ora</span>
-          </button>
+          </a>
           <p className="footer-copy">
             End-to-end marketing systems for ambitious hospitality, retail, and lifestyle brands across the MENA region.
           </p>
@@ -93,9 +165,15 @@ export function Footer({ onNavigate }) {
           <p className="footer-label">Navigation</p>
           <div className="footer-links">
             {navItems.map((item) => (
-              <button key={item.key} className="footer-link" onClick={() => onNavigate(item.key)}>
+              <PageLink
+                key={item.key}
+                pageKey={item.key}
+                className="footer-link"
+                currentPage={currentPage}
+                onNavigate={onNavigate}
+              >
                 {item.label}
-              </button>
+              </PageLink>
             ))}
           </div>
         </div>
@@ -103,10 +181,10 @@ export function Footer({ onNavigate }) {
         <div className="footer-column">
           <p className="footer-label">Core Services</p>
           <div className="footer-links">
-            <button className="footer-link" onClick={() => onNavigate('services')}>Brand Strategy</button>
-            <button className="footer-link" onClick={() => onNavigate('services')}>Creative Production</button>
-            <button className="footer-link" onClick={() => onNavigate('services')}>Performance Marketing</button>
-            <button className="footer-link" onClick={() => onNavigate('services')}>Social Media</button>
+            <PageLink pageKey="services" className="footer-link" currentPage={currentPage} onNavigate={onNavigate}>Brand Strategy</PageLink>
+            <PageLink pageKey="services" className="footer-link" currentPage={currentPage} onNavigate={onNavigate}>Creative Production</PageLink>
+            <PageLink pageKey="services" className="footer-link" currentPage={currentPage} onNavigate={onNavigate}>Performance Marketing</PageLink>
+            <PageLink pageKey="services" className="footer-link" currentPage={currentPage} onNavigate={onNavigate}>Social Media</PageLink>
           </div>
         </div>
 
@@ -134,8 +212,15 @@ export function Footer({ onNavigate }) {
       <div className="shell footer-bottom">
         <p>© 2026 MarkOra. All rights reserved.</p>
         <div className="footer-bottom-links">
-          <button className="footer-bottom-link" onClick={() => onNavigate('contact')}>Start a Project</button>
-          <a href="mailto:hello@mark-ora.com">hello@mark-ora.com</a>
+          <PageLink pageKey="contact" className="footer-bottom-link" currentPage={currentPage} onNavigate={onNavigate}>
+            Start a Project
+          </PageLink>
+          <PageLink pageKey="privacy" className="footer-bottom-link" currentPage={currentPage} onNavigate={onNavigate}>
+            Privacy
+          </PageLink>
+          <PageLink pageKey="terms" className="footer-bottom-link" currentPage={currentPage} onNavigate={onNavigate}>
+            Terms
+          </PageLink>
         </div>
       </div>
     </footer>

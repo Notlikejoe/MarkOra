@@ -1,0 +1,37 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0B0F19"/>
+  <rect width="1200" height="630" fill="url(#paint0_radial)"/>
+  <rect x="78" y="78" width="1044" height="474" rx="36" fill="url(#paint1_linear)" fill-opacity="0.7" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <g opacity="0.38">
+    <path d="M600 202L312 272" stroke="#60A5FA" stroke-width="2"/>
+    <path d="M600 202L480 134" stroke="#60A5FA" stroke-width="2"/>
+    <path d="M600 202L756 128" stroke="#60A5FA" stroke-width="2"/>
+    <path d="M600 202L904 274" stroke="#60A5FA" stroke-width="2"/>
+  </g>
+  <circle cx="600" cy="202" r="96" fill="url(#paint2_radial)"/>
+  <circle cx="600" cy="202" r="54" fill="#111827" stroke="#93C5FD" stroke-opacity="0.35"/>
+  <path d="M565 170H590L600 202L610 170H635V234H617V198L604 234H595L582 198V234H565V170Z" fill="#F8FAFC"/>
+  <text x="600" y="338" text-anchor="middle" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="74" font-weight="800" letter-spacing="-3">
+    MarkOra
+  </text>
+  <text x="600" y="414" text-anchor="middle" fill="#93C5FD" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700">
+    Growth Systems for Premium MENA Brands
+  </text>
+  <text x="600" y="470" text-anchor="middle" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="24">
+    Brand Strategy • Content Systems • Paid Media • Social Management
+  </text>
+  <defs>
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(988 54) rotate(139.006) scale(587.832 700.669)">
+      <stop stop-color="#1D4ED8" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#0B0F19" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="paint1_linear" x1="78" y1="78" x2="1122" y2="552" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#111827" stop-opacity="0.7"/>
+    </linearGradient>
+    <radialGradient id="paint2_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(600 202) rotate(90) scale(96)">
+      <stop stop-color="#22D3EE" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#818CF8" stop-opacity="0.08"/>
+    </radialGradient>
+  </defs>
+</svg>

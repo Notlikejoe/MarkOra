@@ -208,16 +208,20 @@ export function HomePage({ onNavigate }) {
           <p className="story-copy">
             The new direction leads with emotion first, then proves credibility through motion, campaign framing, and a stronger sense of regional sophistication.
           </p>
-          <div className="story-signal-list">
+          <div className="story-signal-list" role="radiogroup" aria-label="MarkOra focus areas">
             {impactNotes.map((item, index) => (
-              <div
+              <button
+                type="button"
                 key={item.label}
                 className={index === activeSignalIndex ? 'story-signal-chip active' : 'story-signal-chip'}
                 onMouseEnter={() => setActiveSignalIndex(index)}
+                onFocus={() => setActiveSignalIndex(index)}
+                role="radio"
+                aria-checked={index === activeSignalIndex}
               >
                 <span>{item.label}</span>
                 <strong>{item.value}</strong>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -401,8 +405,8 @@ export function ServicesPage({ onNavigate }) {
             <h3>{activeService.title}</h3>
             <p className="service-feature-copy">{activeService.description}</p>
             <div className="tag-row">
-              {activeService.deliverables.map((item, index) => (
-                <span key={item} className={index === 0 ? 'tag accent-tag' : 'tag'}>{item}</span>
+              {activeService.deliverables.map((item) => (
+                <span key={item} className="tag accent-tag">{item}</span>
               ))}
             </div>
             <div className="feature-note-grid">
@@ -495,25 +499,32 @@ export function WorkPage() {
             className="work-spotlight-beam"
             style={{ transform: `translate(${workOffset.x * 22}px, ${workOffset.y * 16}px)` }}
           />
-          <div
-            className="work-spotlight-frame"
-            style={{ transform: `translate(${workOffset.x * -10}px, ${workOffset.y * -8}px)` }}
-          >
-            <span>{activeWorkProject.category}</span>
-            <strong>{activeWorkProject.type}</strong>
-            <p>{activeWorkProject.year}</p>
-          </div>
-          <div className="work-spotlight-orbits">
-            {projects.slice(0, 6).map((project, index) => (
-              <button
-                key={project.id}
-                className={project.id === activeWorkProject.id ? 'work-orbit-chip active' : 'work-orbit-chip'}
-                onMouseEnter={() => setActiveWorkIndex(index)}
-                onClick={() => setActiveWorkIndex(index)}
-              >
-                {project.title}
-              </button>
-            ))}
+          <div className="work-spotlight-stage-grid">
+            <div
+              className="work-spotlight-frame"
+              style={{ transform: `translate(${workOffset.x * -10}px, ${workOffset.y * -8}px)` }}
+            >
+              <span>{activeWorkProject.category}</span>
+              <strong>{activeWorkProject.type}</strong>
+              <p>{activeWorkProject.year}</p>
+            </div>
+            <div className="work-spotlight-selector">
+              <p className="mini-label accent">Project Library</p>
+              <div className="work-spotlight-orbits">
+                {projects.slice(0, 6).map((project, index) => (
+                  <button
+                    key={project.id}
+                    className={project.id === activeWorkProject.id ? 'work-orbit-chip active' : 'work-orbit-chip'}
+                    onMouseEnter={() => setActiveWorkIndex(index)}
+                    onFocus={() => setActiveWorkIndex(index)}
+                    onClick={() => setActiveWorkIndex(index)}
+                  >
+                    <span className="work-orbit-title">{project.title}</span>
+                    <span className="work-orbit-meta">{project.category}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -684,6 +695,20 @@ export function ContactPage() {
 
   function handleSubmit(event) {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const subject = encodeURIComponent(`Project Inquiry from ${formData.get('name') || 'Website Visitor'}`);
+    const body = encodeURIComponent(
+      [
+        `Name: ${formData.get('name') || ''}`,
+        `Email: ${formData.get('email') || ''}`,
+        `Company: ${formData.get('company') || ''}`,
+        `Service Interest: ${formData.get('service_interest') || ''}`,
+        `Budget Range: ${formData.get('budget_range') || ''}`,
+        '',
+        `${formData.get('project_details') || ''}`,
+      ].join('\n'),
+    );
+    window.location.href = `mailto:hello@mark-ora.com?subject=${subject}&body=${body}`;
     setSubmitted(true);
   }
 
@@ -705,30 +730,30 @@ export function ContactPage() {
           {submitted ? (
             <div className="success-panel">
               <p className="mini-label accent">Message Sent</p>
-              <h3>We'll be in touch soon.</h3>
-              <p>Thanks for reaching out. We will get back to you within 24 hours.</p>
+              <h3>Your email app should be open.</h3>
+              <p>Review the drafted message and send it to hello@mark-ora.com to complete your inquiry.</p>
             </div>
           ) : (
             <form className="contact-form" onSubmit={handleSubmit}>
               <div className="form-grid">
                 <label>
                   <span>Name *</span>
-                  <input type="text" placeholder="Your full name" required />
+                  <input type="text" name="name" autoComplete="name" placeholder="Your full name…" required />
                 </label>
                 <label>
                   <span>Email *</span>
-                  <input type="email" placeholder="your@email.com" required />
+                  <input type="email" name="email" autoComplete="email" spellCheck={false} placeholder="your@email.com…" required />
                 </label>
               </div>
 
               <div className="form-grid">
                 <label>
                   <span>Company</span>
-                  <input type="text" placeholder="Company name" />
+                  <input type="text" name="company" autoComplete="organization" placeholder="Company name…" />
                 </label>
                 <label>
                   <span>Service Interest</span>
-                  <select defaultValue="">
+                  <select name="service_interest" defaultValue="">
                     <option value="" disabled>Select a service</option>
                     <option>Brand Strategy</option>
                     <option>Digital Marketing</option>
@@ -741,7 +766,7 @@ export function ContactPage() {
 
               <label>
                 <span>Budget Range</span>
-                <select defaultValue="">
+                <select name="budget_range" defaultValue="">
                   <option value="" disabled>Select budget range</option>
                   <option>AED 5,000 - 10,000</option>
                   <option>AED 10,000 - 25,000</option>
@@ -752,7 +777,12 @@ export function ContactPage() {
 
               <label>
                 <span>Project Details *</span>
-                <textarea rows="6" placeholder="Tell us about the brand, goals, and timing..." required />
+                <textarea
+                  rows="6"
+                  name="project_details"
+                  placeholder="Tell us about the brand, goals, and timing…"
+                  required
+                />
               </label>
 
               <button type="submit" className="cta-pill large">Send Message</button>
@@ -794,6 +824,90 @@ export function ContactPage() {
             ))}
           </div>
         </aside>
+      </section>
+    </>
+  );
+}
+
+export function PrivacyPage() {
+  return (
+    <>
+      <section className="shell page-hero">
+        <SectionLabel>Privacy Policy</SectionLabel>
+        <h1 className="hero-title smaller">
+          <span>Privacy that is</span>
+          <span>clear, practical,</span>
+          <span className="gradient-text">and proportionate.</span>
+        </h1>
+      </section>
+
+      <section className="shell section-space top-tight legal-layout">
+        <article className="legal-card">
+          <h2>What We Collect</h2>
+          <p>When you contact MarkOra, we may collect your name, email address, phone number, company name, and the project details you choose to share.</p>
+        </article>
+        <article className="legal-card">
+          <h2>How We Use It</h2>
+          <p>We use inquiry information to review project requests, reply to potential clients, and continue relevant business conversations. We do not sell contact information.</p>
+        </article>
+        <article className="legal-card">
+          <h2>How Contact Works</h2>
+          <p>This website currently opens your email client when you submit the contact form. Your message is sent through your chosen mail provider rather than stored directly by this website.</p>
+        </article>
+        <article className="legal-card">
+          <h2>Third-Party Services</h2>
+          <p>The site uses Google Fonts and may link to external platforms such as LinkedIn and Instagram. Their privacy practices are governed by their own policies.</p>
+        </article>
+        <article className="legal-card">
+          <h2>Data Retention</h2>
+          <p>If you email MarkOra directly, we may retain that correspondence for normal business, legal, and operational record-keeping.</p>
+        </article>
+        <article className="legal-card">
+          <h2>Contact</h2>
+          <p>For privacy-related questions, contact <a href="mailto:hello@mark-ora.com">hello@mark-ora.com</a>.</p>
+        </article>
+      </section>
+    </>
+  );
+}
+
+export function TermsPage() {
+  return (
+    <>
+      <section className="shell page-hero">
+        <SectionLabel>Terms of Service</SectionLabel>
+        <h1 className="hero-title smaller">
+          <span>Simple terms for</span>
+          <span>using the site and</span>
+          <span className="gradient-text">contacting the team.</span>
+        </h1>
+      </section>
+
+      <section className="shell section-space top-tight legal-layout">
+        <article className="legal-card">
+          <h2>Website Use</h2>
+          <p>This website is provided for general information about MarkOra and its services. You may browse, read, and contact us for legitimate business purposes.</p>
+        </article>
+        <article className="legal-card">
+          <h2>No Guaranteed Results</h2>
+          <p>Any service descriptions, case-study summaries, or strategic language on this site are informational and do not guarantee identical results for every client.</p>
+        </article>
+        <article className="legal-card">
+          <h2>Intellectual Property</h2>
+          <p>Unless otherwise stated, the site design, copy, branding, and original materials are the property of MarkOra and may not be reused without permission.</p>
+        </article>
+        <article className="legal-card">
+          <h2>External Links</h2>
+          <p>This site may link to third-party platforms. MarkOra is not responsible for the content, security, or privacy practices of those external sites.</p>
+        </article>
+        <article className="legal-card">
+          <h2>Service Engagement</h2>
+          <p>Any client relationship, project scope, pricing, and delivery expectations are governed by a separate written agreement, not by this website alone.</p>
+        </article>
+        <article className="legal-card">
+          <h2>Contact</h2>
+          <p>Questions about these terms can be sent to <a href="mailto:hello@mark-ora.com">hello@mark-ora.com</a>.</p>
+        </article>
       </section>
     </>
   );
