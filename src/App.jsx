@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BackgroundOrbs, Footer, Header } from './components/Layout';
-import { AboutPage, ContactPage, HomePage, PrivacyPage, ServicesPage, TermsPage, WorkPage } from './pages/pages';
+import { AboutPage, CareersPage, ContactPage, HomePage, PrivacyPage, ServicesPage, TermsPage, WorkPage } from './pages/pages';
 
 const PAGE_PATHS = {
   home: '/',
   services: '/services',
   work: '/work',
   about: '/about',
+  careers: '/careers',
   contact: '/contact',
   privacy: '/privacy',
   terms: '/terms',
@@ -37,6 +38,11 @@ const PAGE_META = {
     description:
       'Learn about MarkOra, a Dubai-based marketing partner built to connect strategy, creative, media, and reporting into one growth system.',
   },
+  careers: {
+    title: 'Careers | MarkOra',
+    description:
+      'Explore careers at MarkOra and apply to join a fast-moving marketing studio building premium brand, content, and digital growth systems across the MENA region.',
+  },
   contact: {
     title: 'Contact | MarkOra',
     description:
@@ -59,6 +65,7 @@ function getPageFromLocation() {
 
 export default function App() {
   const [page, setPage] = useState(getPageFromLocation());
+  const mainRef = React.useRef(null);
 
   useEffect(() => {
     const onLocationChange = () => setPage(getPageFromLocation());
@@ -122,6 +129,9 @@ export default function App() {
     window.history.pushState({}, '', nextPath);
     setPage(nextPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.requestAnimationFrame(() => {
+      mainRef.current?.focus();
+    });
   }
 
   return (
@@ -129,11 +139,12 @@ export default function App() {
       <a className="skip-link" href="#main-content">Skip to content</a>
       <BackgroundOrbs />
       <Header currentPage={currentPage} onNavigate={navigate} />
-      <main id="main-content" tabIndex="-1">
+      <main id="main-content" ref={mainRef} tabIndex="-1">
         {currentPage === 'home' && <HomePage onNavigate={navigate} />}
         {currentPage === 'services' && <ServicesPage onNavigate={navigate} />}
         {currentPage === 'work' && <WorkPage />}
         {currentPage === 'about' && <AboutPage onNavigate={navigate} />}
+        {currentPage === 'careers' && <CareersPage />}
         {currentPage === 'contact' && <ContactPage />}
         {currentPage === 'privacy' && <PrivacyPage />}
         {currentPage === 'terms' && <TermsPage />}

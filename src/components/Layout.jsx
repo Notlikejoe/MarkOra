@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { contactChannels, navItems, socialLinks } from '../data';
 
 const PAGE_PATHS = {
@@ -6,6 +6,7 @@ const PAGE_PATHS = {
   services: '/services',
   work: '/work',
   about: '/about',
+  careers: '/careers',
   contact: '/contact',
   privacy: '/privacy',
   terms: '/terms',
@@ -157,7 +158,7 @@ export function Footer({ currentPage, onNavigate }) {
           <div className="footer-location-row">
             <span>Dubai</span>
             <span>Cairo</span>
-            <span>Amman</span>
+            <span>Riyadh</span>
           </div>
         </div>
 
@@ -210,10 +211,13 @@ export function Footer({ currentPage, onNavigate }) {
       </div>
 
       <div className="shell footer-bottom">
-        <p>© 2026 MarkOra. All rights reserved.</p>
+        <p>Copyright 2026 MarkOra. All rights reserved.</p>
         <div className="footer-bottom-links">
           <PageLink pageKey="contact" className="footer-bottom-link" currentPage={currentPage} onNavigate={onNavigate}>
             Start a Project
+          </PageLink>
+          <PageLink pageKey="careers" className="footer-bottom-link" currentPage={currentPage} onNavigate={onNavigate}>
+            Careers
           </PageLink>
           <PageLink pageKey="privacy" className="footer-bottom-link" currentPage={currentPage} onNavigate={onNavigate}>
             Privacy
@@ -245,3 +249,5 @@ export function BackgroundOrbs() {
     </>
   );
 }
+
+

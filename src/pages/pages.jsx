@@ -1,5 +1,7 @@
 ﻿import React, { useMemo, useState } from 'react';
 import {
+  careerHighlights,
+  careerTracks,
   contactChannels,
   impactNotes,
   journey,
@@ -12,6 +14,124 @@ import {
   workFilters,
 } from '../data';
 import { SectionLabel } from '../components/Layout';
+
+function SmartVideo({
+  className,
+  src,
+  poster,
+  type = 'video/mp4',
+  controls = false,
+  eager = false,
+  rootMargin = '220px 0px',
+  visibilityThreshold = 0.35,
+  decorative = !controls,
+}) {
+  const videoRef = React.useRef(null);
+  const [shouldLoad, setShouldLoad] = useState(Boolean(controls || eager));
+  const [isVisible, setIsVisible] = useState(Boolean(controls || eager));
+  const [orientationClass, setOrientationClass] = useState('');
+
+  React.useEffect(() => {
+    const video = videoRef.current;
+    if (!video || controls) return undefined;
+
+    const effectiveThreshold =
+      typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches
+        ? Math.min(visibilityThreshold, 0.12)
+        : visibilityThreshold;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoad(true);
+          }
+
+          setIsVisible(entry.isIntersecting && entry.intersectionRatio >= effectiveThreshold);
+        });
+      },
+      { threshold: [0, effectiveThreshold, 1], rootMargin },
+    );
+
+    observer.observe(video);
+
+    return () => observer.disconnect();
+  }, [controls, rootMargin, visibilityThreshold]);
+
+  React.useEffect(() => {
+    if (eager) {
+      setShouldLoad(true);
+    }
+  }, [eager]);
+
+  React.useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return undefined;
+
+    function handleMetadata() {
+      if (!video.videoWidth || !video.videoHeight) return;
+      setOrientationClass(video.videoHeight > video.videoWidth ? 'is-portrait' : 'is-landscape');
+    }
+
+    video.addEventListener('loadedmetadata', handleMetadata);
+    handleMetadata();
+
+    return () => video.removeEventListener('loadedmetadata', handleMetadata);
+  }, [src]);
+
+  React.useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !shouldLoad) return undefined;
+
+    video.load();
+
+    return undefined;
+  }, [shouldLoad, src, type]);
+
+  React.useEffect(() => {
+    const video = videoRef.current;
+    if (!video || controls || !shouldLoad) return undefined;
+
+    if (isVisible) {
+      const playPromise = video.play();
+      if (playPromise?.catch) {
+        playPromise.catch(() => {});
+      }
+    } else {
+      video.pause();
+    }
+
+    return undefined;
+  }, [controls, isVisible, shouldLoad]);
+
+  return (
+    <video
+      ref={videoRef}
+      className={orientationClass ? `${className} ${orientationClass}` : className}
+      playsInline
+      autoPlay={!controls}
+      poster={poster}
+      preload={controls || eager ? 'auto' : 'none'}
+      controls={controls}
+      muted={!controls}
+      loop={!controls}
+      aria-hidden={decorative ? 'true' : undefined}
+      tabIndex={decorative ? -1 : undefined}
+      style={
+        poster
+          ? {
+              backgroundImage: `url("${poster}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }
+          : undefined
+      }
+    >
+      {shouldLoad ? <source src={src} type={type} /> : null}
+    </video>
+  );
+}
 
 function useScrollReveal(selector) {
   React.useEffect(() => {
@@ -41,13 +161,20 @@ export function HomePage({ onNavigate }) {
   const featured = projects.slice(0, 3);
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
   const [activeSignalIndex, setActiveSignalIndex] = useState(0);
-  const [heroOffset, setHeroOffset] = useState({ x: 0, y: 0 });
+  const heroCanvasRef = React.useRef(null);
+  const heroMoveFrameRef = React.useRef(null);
   const activeService = services[activeServiceIndex];
   const activeSignal = impactNotes[activeSignalIndex];
   const activeProject = featured[activeSignalIndex % featured.length];
   const orbitLabels = ['SEO', 'Branding', 'Analytics', 'Content', 'Social Media', 'Web Design', 'PPC', 'Strategy'];
 
   useScrollReveal('.home-scroll-reveal');
+
+  React.useEffect(() => () => {
+    if (heroMoveFrameRef.current) {
+      window.cancelAnimationFrame(heroMoveFrameRef.current);
+    }
+  }, []);
 
   React.useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -61,39 +188,54 @@ export function HomePage({ onNavigate }) {
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
     const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
-    setHeroOffset({ x, y });
-  }
 
-  function handleStoryMove(event) {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const relativeX = (event.clientX - bounds.left) / bounds.width;
-    const nextIndex = Math.max(0, Math.min(impactNotes.length - 1, Math.floor(relativeX * impactNotes.length)));
-    setActiveSignalIndex(nextIndex);
+    if (heroMoveFrameRef.current) {
+      window.cancelAnimationFrame(heroMoveFrameRef.current);
+    }
+
+    heroMoveFrameRef.current = window.requestAnimationFrame(() => {
+      const heroCanvas = heroCanvasRef.current;
+      if (!heroCanvas) return;
+      heroCanvas.style.setProperty('--hero-left-transform', `translate(${x * -18}px, ${y * -12}px)`);
+      heroCanvas.style.setProperty('--hero-right-transform', `translate(${x * 20}px, ${y * 14}px)`);
+      heroCanvas.style.setProperty('--hero-lines-transform', `translate(${x * 8}px, ${y * 6}px)`);
+      heroCanvas.style.setProperty('--hero-core-transform', `translate(${x * 14}px, ${y * 10}px)`);
+    });
   }
 
   function resetHeroMove() {
-    setHeroOffset({ x: 0, y: 0 });
+    if (heroMoveFrameRef.current) {
+      window.cancelAnimationFrame(heroMoveFrameRef.current);
+      heroMoveFrameRef.current = null;
+    }
+
+    const heroCanvas = heroCanvasRef.current;
+    if (!heroCanvas) return;
+    heroCanvas.style.removeProperty('--hero-left-transform');
+    heroCanvas.style.removeProperty('--hero-right-transform');
+    heroCanvas.style.removeProperty('--hero-lines-transform');
+    heroCanvas.style.removeProperty('--hero-core-transform');
   }
 
   return (
     <>
-      <section className="home-hero-canvas" onMouseMove={handleHeroMove} onMouseLeave={resetHeroMove}>
+      <section ref={heroCanvasRef} className="home-hero-canvas" onMouseMove={handleHeroMove} onMouseLeave={resetHeroMove}>
         <div className="hero-canvas-bg">
           <div className="hero-canvas-grid" />
           <div
             className="hero-canvas-glow hero-canvas-glow-left"
-            style={{ transform: `translate(${heroOffset.x * -18}px, ${heroOffset.y * -12}px)` }}
+            style={{ transform: 'var(--hero-left-transform, translate(0px, 0px))' }}
           />
           <div
             className="hero-canvas-glow hero-canvas-glow-right"
-            style={{ transform: `translate(${heroOffset.x * 20}px, ${heroOffset.y * 14}px)` }}
+            style={{ transform: 'var(--hero-right-transform, translate(0px, 0px))' }}
           />
           <svg
             className="hero-canvas-lines"
             viewBox="0 0 1600 900"
             preserveAspectRatio="none"
             aria-hidden="true"
-            style={{ transform: `translate(${heroOffset.x * 8}px, ${heroOffset.y * 6}px)` }}
+            style={{ transform: 'var(--hero-lines-transform, translate(0px, 0px))' }}
           >
             <path d="M800 240 L360 360" />
             <path d="M800 240 L620 178" />
@@ -147,7 +289,7 @@ export function HomePage({ onNavigate }) {
 
           <div
             className="hero-command-graphic reveal-up-delayed"
-            style={{ transform: `translate(${heroOffset.x * 14}px, ${heroOffset.y * 10}px)` }}
+            style={{ transform: 'var(--hero-core-transform, translate(0px, 0px))' }}
           >
             <div className="command-core-mark">M</div>
             <div className="command-core-caption">Growth Command System</div>
@@ -166,7 +308,7 @@ export function HomePage({ onNavigate }) {
             <span>Social Management</span>
             <span>Dubai</span>
             <span>Cairo</span>
-            <span>Amman</span>
+            <span>Riyadh</span>
           </div>
           <div className="ticker-group" aria-hidden="true">
             <span>Brand Strategy</span>
@@ -175,7 +317,7 @@ export function HomePage({ onNavigate }) {
             <span>Social Management</span>
             <span>Dubai</span>
             <span>Cairo</span>
-            <span>Amman</span>
+            <span>KSA</span>
           </div>
         </div>
       </section>
@@ -225,12 +367,9 @@ export function HomePage({ onNavigate }) {
             ))}
           </div>
         </div>
-        <div
-          className="story-panel story-panel-visual home-scroll-reveal home-scroll-reveal-delay-1"
-          onMouseMove={handleStoryMove}
-        >
+        <div className="story-panel story-panel-visual home-scroll-reveal home-scroll-reveal-delay-1">
           <div className="story-visual-topline">
-            <p className="mini-label accent">Cursor Focus</p>
+            <p className="mini-label accent">Focus Area</p>
             <span>{activeProject.year}</span>
           </div>
           <div className="story-visual-frame">
@@ -264,10 +403,14 @@ export function HomePage({ onNavigate }) {
         <div className="services-home-grid">
           <div className="services-list">
             {services.map((service, index) => (
-              <article
+              <button
+                type="button"
                 key={service.key}
                 className={`service-row ${service.key === activeService.key ? 'active' : ''}`}
                 onMouseEnter={() => setActiveServiceIndex(index)}
+                onFocus={() => setActiveServiceIndex(index)}
+                onClick={() => setActiveServiceIndex(index)}
+                aria-pressed={service.key === activeService.key}
                 style={{ '--service-delay': `${index * 0.08}s` }}
               >
                 <span className="service-row-glow" />
@@ -277,7 +420,7 @@ export function HomePage({ onNavigate }) {
                   <p>{service.blurb}</p>
                 </div>
                 <span className="service-ghost-number">{service.number}</span>
-              </article>
+              </button>
             ))}
           </div>
 
@@ -313,9 +456,25 @@ export function HomePage({ onNavigate }) {
         <SectionLabel>Selected Work</SectionLabel>
         <div className="featured-project-grid featured-project-grid-home">
           {featured.map((project) => (
-            <article key={project.id} className="project-card">
+            <button
+              type="button"
+              key={project.id}
+              className="project-card"
+              onClick={() => onNavigate('work')}
+              aria-label={`Open the work library and view projects like ${project.title}`}
+            >
               <div className="project-card-beam" />
               <div className="project-art" style={{ '--project-color': project.color }}>
+                {project.video ? (
+                  <SmartVideo
+                    className="project-media"
+                    src={project.video}
+                    poster={project.poster}
+                    type={project.videoType || 'video/mp4'}
+                    rootMargin="120px 0px"
+                    visibilityThreshold={0.72}
+                  />
+                ) : null}
                 <span>{project.category}</span>
               </div>
               <div className="project-body">
@@ -325,9 +484,9 @@ export function HomePage({ onNavigate }) {
                 </div>
                 <h3>{project.title}</h3>
                 <p>{project.description}</p>
-                <button className="text-link" onClick={() => onNavigate('work')}>Open project library</button>
+                <span className="text-link">Open project library</span>
               </div>
-            </article>
+            </button>
           ))}
         </div>
       </section>
@@ -437,10 +596,17 @@ export function WorkPage() {
   const [filter, setFilter] = useState('All');
   const [selected, setSelected] = useState(null);
   const [activeWorkIndex, setActiveWorkIndex] = useState(0);
-  const [workOffset, setWorkOffset] = useState({ x: 0, y: 0 });
+  const workStageRef = React.useRef(null);
+  const workMoveFrameRef = React.useRef(null);
   const activeWorkProject = projects[activeWorkIndex];
 
   useScrollReveal('.work-scroll-reveal');
+
+  React.useEffect(() => () => {
+    if (workMoveFrameRef.current) {
+      window.cancelAnimationFrame(workMoveFrameRef.current);
+    }
+  }, []);
 
   const filteredProjects = useMemo(() => {
     if (filter === 'All') return projects;
@@ -451,14 +617,29 @@ export function WorkPage() {
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
     const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
-    const relativeX = (event.clientX - bounds.left) / bounds.width;
-    const nextIndex = Math.max(0, Math.min(projects.length - 1, Math.floor(relativeX * projects.length)));
-    setWorkOffset({ x, y });
-    setActiveWorkIndex(nextIndex);
+
+    if (workMoveFrameRef.current) {
+      window.cancelAnimationFrame(workMoveFrameRef.current);
+    }
+
+    workMoveFrameRef.current = window.requestAnimationFrame(() => {
+      const workStage = workStageRef.current;
+      if (!workStage) return;
+      workStage.style.setProperty('--work-beam-transform', `translate(${x * 22}px, ${y * 16}px)`);
+      workStage.style.setProperty('--work-media-transform', `translate(${x * -10}px, ${y * -8}px)`);
+    });
   }
 
   function resetWorkMove() {
-    setWorkOffset({ x: 0, y: 0 });
+    if (workMoveFrameRef.current) {
+      window.cancelAnimationFrame(workMoveFrameRef.current);
+      workMoveFrameRef.current = null;
+    }
+
+    const workStage = workStageRef.current;
+    if (!workStage) return;
+    workStage.style.removeProperty('--work-beam-transform');
+    workStage.style.removeProperty('--work-media-transform');
   }
 
   return (
@@ -473,23 +654,8 @@ export function WorkPage() {
       </section>
 
       <section className="shell work-spotlight work-scroll-reveal home-scroll-reveal-delay-1">
-        <div className="work-spotlight-copy">
-          <p className="mini-label accent">Featured Case</p>
-          <h2>{activeWorkProject.title}</h2>
-          <p className="work-spotlight-text">{activeWorkProject.description}</p>
-          <div className="tag-row work-spotlight-tags">
-            {activeWorkProject.tags.map((tag, index) => (
-              <span key={tag} className={index === 0 ? 'tag accent-tag' : 'tag'}>{tag}</span>
-            ))}
-          </div>
-          <div className="work-spotlight-results">
-            {activeWorkProject.results.map((result) => (
-              <div key={result} className="work-result-row">{result}</div>
-            ))}
-          </div>
-        </div>
-
         <div
+          ref={workStageRef}
           className="work-spotlight-stage"
           style={{ '--project-color': activeWorkProject.color }}
           onMouseMove={handleWorkMove}
@@ -497,51 +663,77 @@ export function WorkPage() {
         >
           <div
             className="work-spotlight-beam"
-            style={{ transform: `translate(${workOffset.x * 22}px, ${workOffset.y * 16}px)` }}
+            style={{ transform: 'var(--work-beam-transform, translate(0px, 0px))' }}
           />
+          <div className="work-spotlight-stage-lines" aria-hidden="true" />
           <div className="work-spotlight-stage-grid">
-            <div
-              className="work-spotlight-frame"
-              style={{ transform: `translate(${workOffset.x * -10}px, ${workOffset.y * -8}px)` }}
-            >
-              <span>{activeWorkProject.category}</span>
-              <strong>{activeWorkProject.type}</strong>
-              <p>{activeWorkProject.year}</p>
-            </div>
-            <div className="work-spotlight-selector">
-              <p className="mini-label accent">Project Library</p>
-              <div className="work-spotlight-orbits">
+            <div className="work-stage-backdrop">
+              <div
+                className="work-stage-media"
+                style={{ transform: 'var(--work-media-transform, translate(0px, 0px))' }}
+              >
+                {activeWorkProject.video ? (
+                  <SmartVideo
+                    className="work-spotlight-video"
+                    src={activeWorkProject.video}
+                    poster={activeWorkProject.poster}
+                    type={activeWorkProject.videoType || 'video/mp4'}
+                    eager
+                    rootMargin="320px 0px"
+                    visibilityThreshold={0.2}
+                  />
+                ) : null}
+              </div>
+              <div className="work-stage-chips">
+                <span className="work-case-chip">{activeWorkProject.category}</span>
+                <span className="work-case-chip muted">{activeWorkProject.year}</span>
+              </div>
+              <div className="work-stage-content">
+                <p className="mini-label accent">Featured Case</p>
+                <h2>{activeWorkProject.title}</h2>
+                <p className="work-spotlight-text">{activeWorkProject.description}</p>
+                <div className="work-spotlight-meta-row">
+                  <div>
+                    <span className="mini-label">Format</span>
+                    <p>{activeWorkProject.type}</p>
+                  </div>
+                  <div>
+                    <span className="mini-label">Location</span>
+                    <p>Dubai · Riyadh · Cairo</p>
+                  </div>
+                </div>
+                <div className="tag-row work-spotlight-tags">
+                  {activeWorkProject.tags.slice(0, 3).map((tag, index) => (
+                    <span key={tag} className={index === 0 ? 'tag accent-tag' : 'tag'}>{tag}</span>
+                  ))}
+                </div>
+                <div className="work-spotlight-results">
+                  {activeWorkProject.results.map((result, index) => (
+                    <div key={result} className="work-result-row">
+                      <span>{`0${index + 1}`}</span>
+                      <p>{result}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="work-stage-strip">
+                <p className="mini-label accent">Project Library</p>
+                <div className="work-stage-strip-track">
                 {projects.slice(0, 6).map((project, index) => (
                   <button
                     key={project.id}
                     className={project.id === activeWorkProject.id ? 'work-orbit-chip active' : 'work-orbit-chip'}
-                    onMouseEnter={() => setActiveWorkIndex(index)}
-                    onFocus={() => setActiveWorkIndex(index)}
                     onClick={() => setActiveWorkIndex(index)}
                   >
                     <span className="work-orbit-title">{project.title}</span>
                     <span className="work-orbit-meta">{project.category}</span>
                   </button>
                 ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="shell tilted-gallery work-scroll-reveal home-scroll-reveal-delay-2">
-        {projects.slice(0, 6).map((project, index) => (
-          <button
-            key={project.id}
-            className={project.id === activeWorkProject.id ? 'gallery-card active' : 'gallery-card'}
-            style={{ '--project-color': project.color, '--rotation': `${index % 2 === 0 ? -4 : 4}deg` }}
-            onMouseEnter={() => setActiveWorkIndex(index)}
-            onClick={() => setActiveWorkIndex(index)}
-          >
-            <span>{project.title}</span>
-            <p>{project.category}</p>
-          </button>
-        ))}
       </section>
 
       <section className="shell filter-bar work-scroll-reveal">
@@ -558,9 +750,16 @@ export function WorkPage() {
 
       <section className="shell project-grid section-space top-tight work-scroll-reveal">
         {filteredProjects.map((project) => (
-          <article key={project.id} className="project-card project-card-large">
+          <button
+            type="button"
+            key={project.id}
+            className="project-card project-card-large"
+            onClick={() => setSelected(project)}
+            aria-label={`View details for ${project.title}`}
+          >
             <div className="project-card-beam" />
             <div className="project-art tall" style={{ '--project-color': project.color }}>
+              {project.poster ? <img className="project-media" src={project.poster} alt="" loading="lazy" /> : null}
               <span>{project.category}</span>
             </div>
             <div className="project-body">
@@ -570,9 +769,9 @@ export function WorkPage() {
               </div>
               <h3>{project.title}</h3>
               <p>{project.description}</p>
-              <button className="text-link" onClick={() => setSelected(project)}>View Details</button>
+              <span className="text-link">View Details</span>
             </div>
-          </article>
+          </button>
         ))}
       </section>
 
@@ -582,6 +781,15 @@ export function WorkPage() {
             <button className="modal-close" onClick={() => setSelected(null)}>×</button>
             <p className="mini-label accent">{selected.category}</p>
             <h3>{selected.title}</h3>
+            {selected.video ? (
+              <SmartVideo
+                className="modal-media"
+                src={selected.video}
+                poster={selected.poster}
+                type={selected.videoType || 'video/mp4'}
+                controls
+              />
+            ) : null}
             <p className="modal-copy">{selected.description}</p>
             <div className="tag-row">
               {selected.tags.map((tag) => (
@@ -637,7 +845,7 @@ export function AboutPage({ onNavigate }) {
 
       <section className="shell section-space">
         <SectionLabel>What We Offer</SectionLabel>
-        <h2 className="section-title">Four core services. One growth system.</h2>
+        <h2 className="section-title">Six core services. One growth system.</h2>
         <div className="principles-grid services-preview-grid">
           {services.map((service) => (
             <article key={service.key} className="glass-panel principle-card">
@@ -690,6 +898,185 @@ export function AboutPage({ onNavigate }) {
   );
 }
 
+export function CareersPage() {
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const subject = encodeURIComponent(`Career Application from ${formData.get('name') || 'Candidate'}`);
+    const body = encodeURIComponent(
+      [
+        `Name: ${formData.get('name') || ''}`,
+        `Email: ${formData.get('email') || ''}`,
+        `Phone: ${formData.get('phone') || ''}`,
+        `Role Interest: ${formData.get('role_interest') || ''}`,
+        `Portfolio / LinkedIn: ${formData.get('portfolio') || ''}`,
+        `Availability: ${formData.get('availability') || ''}`,
+        '',
+        'Why MarkOra / Background:',
+        `${formData.get('application_note') || ''}`,
+      ].join('\n'),
+    );
+    window.location.href = `mailto:info@mark-ora.com?subject=${subject}&body=${body}`;
+    setSubmitted(true);
+  }
+
+  return (
+    <>
+      <section className="shell page-hero careers-hero">
+        <div className="careers-hero-grid">
+          <div className="careers-hero-copy">
+            <SectionLabel>Careers at MarkOra</SectionLabel>
+            <h1 className="hero-title smaller">
+              <span>Build work that</span>
+              <span>moves fast, looks</span>
+              <span className="gradient-text">premium, and matters.</span>
+            </h1>
+            <p className="hero-subtitle max-copy">
+              Working at MarkOra means joining a studio where strategy, creative, content, and growth execution stay close together. The work is hands-on, the standards are high, and strong ideas have room to become real campaigns.
+            </p>
+            <div className="careers-hero-pills">
+              <span>High Ownership</span>
+              <span>Regional Brand Exposure</span>
+              <span>Creative Growth</span>
+            </div>
+          </div>
+
+          <div className="careers-visual-stage" aria-hidden="true">
+            <div className="careers-stage-glow careers-stage-glow-a" />
+            <div className="careers-stage-glow careers-stage-glow-b" />
+            <div className="careers-stage-panel careers-stage-panel-main">
+              <p className="mini-label accent">Studio Energy</p>
+              <strong>Ideas into campaigns.</strong>
+              <span>Fast-moving briefs, tighter collaboration, higher taste.</span>
+            </div>
+            <div className="careers-stage-panel careers-stage-panel-side">
+              <p className="mini-label">What You Feel</p>
+              <span>Ownership</span>
+              <span>Momentum</span>
+              <span>Creative Pressure</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="shell section-space careers-highlights">
+        <SectionLabel>Why Join</SectionLabel>
+        <div className="careers-highlight-grid">
+          {careerHighlights.map((item, index) => (
+            <article key={item.title} className="careers-highlight-card">
+              <span className="careers-highlight-number">{`0${index + 1}`}</span>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="shell contact-layout section-space top-tight careers-apply-section">
+        <div>
+          <p className="mini-label">Application Form</p>
+          {submitted ? (
+            <div className="success-panel">
+              <p className="mini-label accent">Application Drafted</p>
+              <h3>Your email app should be open.</h3>
+              <p>Review the drafted application and send it to info@mark-ora.com to complete your submission.</p>
+            </div>
+          ) : (
+            <form className="contact-form" onSubmit={handleSubmit}>
+              <div className="form-grid">
+                <label>
+                  <span>Name *</span>
+                  <input type="text" name="name" autoComplete="name" placeholder="Your full name…" required />
+                </label>
+                <label>
+                  <span>Email *</span>
+                  <input type="email" name="email" autoComplete="email" spellCheck={false} placeholder="your@email.com…" required />
+                </label>
+              </div>
+
+              <div className="form-grid">
+                <label>
+                  <span>Phone</span>
+                  <input type="tel" name="phone" autoComplete="tel" placeholder="+971…" />
+                </label>
+                <label>
+                  <span>Role Interest *</span>
+                  <select name="role_interest" defaultValue="" required>
+                    <option value="" disabled>Select a role area</option>
+                    {careerTracks.map((track) => (
+                      <option key={track}>{track}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="form-grid">
+                <label>
+                  <span>Portfolio / LinkedIn</span>
+                  <input type="url" name="portfolio" autoComplete="url" placeholder="https://…" />
+                </label>
+                <label>
+                  <span>Availability</span>
+                  <select name="availability" defaultValue="">
+                    <option value="" disabled>Select availability</option>
+                    <option>Immediate</option>
+                    <option>Within 2 Weeks</option>
+                    <option>Within 1 Month</option>
+                    <option>Flexible</option>
+                  </select>
+                </label>
+              </div>
+
+              <label>
+                <span>Why MarkOra? *</span>
+                <textarea
+                  rows="6"
+                  name="application_note"
+                  placeholder="Tell us about your background, the kind of work you want to build, and why MarkOra feels like the right fit…"
+                  required
+                />
+              </label>
+
+              <button type="submit" className="cta-pill large">Send Application</button>
+            </form>
+          )}
+        </div>
+
+        <aside className="contact-sidebar careers-sidebar">
+          <div className="sidebar-block">
+            <p className="mini-label">What We Value</p>
+            <div className="careers-values-list">
+              <span>Taste in execution</span>
+              <span>Ownership and initiative</span>
+              <span>Clarity under pressure</span>
+              <span>Respect for craft</span>
+            </div>
+          </div>
+
+          <div className="sidebar-block">
+            <p className="mini-label">Best Fit</p>
+            <div className="careers-role-list">
+              {careerTracks.slice(0, 6).map((track) => (
+                <span key={track} className="office-badge active">{track}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-block">
+            <p className="mini-label">Send To</p>
+            <div className="sidebar-link-block">
+              <span>Email</span>
+              <a href="mailto:info@mark-ora.com">info@mark-ora.com</a>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </>
+  );
+}
+
 export function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
 
@@ -708,7 +1095,7 @@ export function ContactPage() {
         `${formData.get('project_details') || ''}`,
       ].join('\n'),
     );
-    window.location.href = `mailto:hello@mark-ora.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:info@mark-ora.com?subject=${subject}&body=${body}`;
     setSubmitted(true);
   }
 
@@ -731,7 +1118,7 @@ export function ContactPage() {
             <div className="success-panel">
               <p className="mini-label accent">Message Sent</p>
               <h3>Your email app should be open.</h3>
-              <p>Review the drafted message and send it to hello@mark-ora.com to complete your inquiry.</p>
+              <p>Review the drafted message and send it to info@mark-ora.com to complete your inquiry.</p>
             </div>
           ) : (
             <form className="contact-form" onSubmit={handleSubmit}>
@@ -864,7 +1251,7 @@ export function PrivacyPage() {
         </article>
         <article className="legal-card">
           <h2>Contact</h2>
-          <p>For privacy-related questions, contact <a href="mailto:hello@mark-ora.com">hello@mark-ora.com</a>.</p>
+          <p>For privacy-related questions, contact <a href="mailto:info@mark-ora.com">info@mark-ora.com</a>.</p>
         </article>
       </section>
     </>
@@ -906,9 +1293,10 @@ export function TermsPage() {
         </article>
         <article className="legal-card">
           <h2>Contact</h2>
-          <p>Questions about these terms can be sent to <a href="mailto:hello@mark-ora.com">hello@mark-ora.com</a>.</p>
+          <p>Questions about these terms can be sent to <a href="mailto:info@mark-ora.com">info@mark-ora.com</a>.</p>
         </article>
       </section>
     </>
   );
 }
+

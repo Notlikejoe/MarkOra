@@ -1,0 +1,21 @@
+﻿<svg width="1600" height="480" viewBox="0 0 1600 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="markoraGradient" x1="760" y1="120" x2="1320" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="52%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#A855F7"/>
+    </linearGradient>
+    <filter id="softGlow" x="620" y="40" width="820" height="400" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.18 0" result="glow"/>
+      <feBlend in="SourceGraphic" in2="glow" mode="screen"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="480" fill="transparent"/>
+
+  <g font-family="Inter, Segoe UI, Arial, sans-serif" font-size="240" font-weight="900" letter-spacing="-14">
+    <text x="80" y="315" fill="#F8FAFC">Mark</text>
+    <text x="705" y="315" fill="url(#markoraGradient)" filter="url(#softGlow)">Ora</text>
+  </g>
+</svg>
