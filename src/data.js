@@ -339,5 +339,5 @@ export const contactChannels = [
 
 export const socialLinks = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/company/mark-ora/' },
-  { label: 'Instagram', href: 'https://www.instagram.com/mark_ora.uae/' },
+  { label: 'Instagram', href: 'https://www.instagram.com/markorauae/' },
 ];
